@@ -1,76 +1,68 @@
-import { useState, useContext } from "react"; 
-import { useNavigate } from "react-router-dom";
-import { Button, Form, Alert } from "react-bootstrap";
-import CampoContrasenna from "../components/form/CampoContrasenna";
+import { useState } from "react";
+import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import CampoEmail from "../components/form/CampoEmail";
+import CampoContrasena from "../components/form/CampoContrasena";
 import { validarLogin } from "../utils/validarLogin";
+import { rutaInicioPorRol } from "../utils/roles";
 
-// Importamos el contexto y el servicio
-import { AuthContext } from "../context/AuthContext";
-import { loginUser } from "../services/authService";
+const inicial = { email: "", contrasena: "" };
 
-const inicial = { email: "", contrasenna: "" }; 
-
-function Login() { 
-  const [datos, setDatos] = useState(inicial); 
-  const [errores, setErrores] = useState({}); 
-  const [errorGlobal, setErrorGlobal] = useState(null); // Para errores del backend
-  
+function Login({ onIniciarSesion }) {
+  const [datos, setDatos] = useState(inicial);
+  const [errores, setErrores] = useState({});
+  const [errorApi, setErrorApi] = useState("");
+  const [enviando, setEnviando] = useState(false);
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // Extraemos la función login del contexto
+  const ubicacion = useLocation();
 
-  function cambiar(evento) { 
-    const { name, value } = evento.target; 
-    setDatos({ ...datos, [name]: value }); 
-    setErrorGlobal(null); // Limpiamos el error global si el usuario vuelve a escribir
-  } 
+  function cambiar(evento) {
+    const { name, value } = evento.target;
+    setDatos((actual) => ({ ...actual, [name]: value }));
+  }
 
-  async function enviar(evento) { 
+  async function enviar(evento) {
     evento.preventDefault();
+    const nuevosErrores = validarLogin(datos);
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) return;
 
-    // 1. Validación del frontend
-    const nuevosErrores = validarLogin(datos); 
-    setErrores(nuevosErrores); 
-    if (Object.keys(nuevosErrores).length > 0) return; 
-
-    // 2. Conexión con el Backend
+    setEnviando(true);
+    setErrorApi("");
     try {
-      // Llamamos al servicio (adaptamos 'contrasenna' a 'password' si el backend está en inglés)
-      const data = await loginUser({ 
-        email: datos.email, 
-        password: datos.contrasenna 
-      });
-
-      // 3. Guardamos sesión en el Contexto
-      login(data.usuario, data.token);
-
-      // 4. Limpiamos el formulario y redirigimos
-      setDatos(inicial); 
-      navigate("/"); // Llevamos al usuario al Home
-      
-    } catch (error) {
-      // Si el backend rechaza el login, mostramos este error
-      setErrorGlobal("Correo o contraseña incorrectos. Intenta nuevamente.");
+      const usuario = await onIniciarSesion({ email: datos.email.trim(), contrasena: datos.contrasena });
+      navigate(ubicacion.state?.desde ?? rutaInicioPorRol(usuario.rol), { replace: true });
+    } catch (e) {
+      setErrorApi(e.message);
+    } finally {
+      setEnviando(false);
     }
-  }  
+  }
 
-  return ( 
-    <div className="container mt-4 mb-5" style={{ maxWidth: "500px" }}>
-      <h2 className="mb-4 text-center text-dark fw-bold">Iniciar Sesión</h2>
-      
-      {/* Alerta para mostrar errores del backend */}
-      {errorGlobal && <Alert variant="danger">{errorGlobal}</Alert>}
-
-      <Form onSubmit={enviar} noValidate>
-        <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
-        <CampoContrasenna datos={datos} errores={errores} onChange={cambiar} />
-
-        <Button type="submit" className="w-100 mt-3" variant="primary">
-          Ingresar
-        </Button> 
-      </Form> 
-    </div>
-  ); 
-} 
+  return (
+    <Container>
+      <Row className="justify-content-center">
+        <Col md={6} lg={4}>
+          <Card className="shadow-sm">
+            <Card.Body className="p-4">
+              <h2 className="mb-4 text-center fw-bold">Iniciar sesión</h2>
+              {errorApi && <Alert variant="danger">{errorApi}</Alert>}
+              <Form onSubmit={enviar} noValidate>
+                <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
+                <CampoContrasena datos={datos} errores={errores} onChange={cambiar} />
+                <Button type="submit" className="w-100" disabled={enviando}>
+                  {enviando ? "Ingresando..." : "Ingresar"}
+                </Button>
+              </Form>
+              <p className="text-center mt-3 mb-0 small">
+                ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
+              </p>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}
 
 export default Login;

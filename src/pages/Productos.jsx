@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import TarjetaProducto from "../components/TarjetaProducto";
-import ProductoCard from "../components/ProductoCard";
 import CarruselOfertas from "../components/CarruselOfertas";
 import { listarProductos } from "../services/productoService";
 
