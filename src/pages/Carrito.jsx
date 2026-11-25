@@ -1,66 +1,64 @@
-import { Link, useNavigate } from "react-router-dom";
-import { guardarCheckout } from "../utils/persistencia";
+import { useState } from "react";
+import { Alert, Button, Card, Container, ListGroup } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import ItemCarrito from "../components/carrito/ItemCarrito";
+import { formatearPrecio } from "../utils/precio";
 
-function Carrito({ productosCarrito, onEliminar }) {
-  const navigate = useNavigate();
+function Carrito({ carrito }) {
+  const { items, total } = carrito.carrito;
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleIrACheckout = () => {
-    guardarCheckout(productosCarrito);
-    navigate("/checkout");
-  };
+  async function ejecutar(operacion) {
+    setOcupado(true);
+    setError("");
+    try {
+      await operacion();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setOcupado(false);
+    }
+  }
 
-  if (productosCarrito.length === 0) {
+  if (items.length === 0) {
     return (
-      <div className="container mt-5 text-center">
-        <h2 className="mb-4 text-center text-dark fw-bold">Tu Carrito está vacío 🛒</h2>
-        <p className="text-muted">Aún no has agregado ningún instrumento musical a tu selección.</p>
-        <Link to="/" className="btn btn-primary mt-3">
-          Ir al Catálogo de Productos
-        </Link>
-      </div>
+      <Container className="text-center mt-5">
+        <h2 className="mb-3 fw-bold">Tu carrito está vacío 🛒</h2>
+        <p className="text-muted">Aún no has agregado ningún instrumento musical.</p>
+        <Button as={Link} to="/" className="mt-2">Ir al catálogo de productos</Button>
+      </Container>
     );
   }
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4 text-center text-dark fw-bold">Carrito de Compras</h2>
-      <div className="card shadow-sm p-4">
-        <ul className="list-group list-group-flush mb-4">
-          {productosCarrito.map((item) => (
-            <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center py-3 flex-wrap">
-              <div className="col-12 col-md-8">
-                <h5 className="mb-1 fw-bold">{item.name}</h5>
-                <span className="badge bg-secondary">{item.category}</span>
-              </div>
-              <div className="col-12 col-md-4 d-flex justify-content-between align-items-center mt-2 mt-md-0">
-                <span className="fw-bold text-primary fs-5">
-                  ${(item.price || 0).toLocaleString("es-CL")}
-                </span>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => onEliminar(item.id)}
-                >
-                  Eliminar
-                </button>
-              </div>
-            </li>
+    <Container>
+      <h2 className="mb-4 text-center fw-bold">Carrito de compras</h2>
+      {(error || carrito.error) && <Alert variant="danger">{error || carrito.error}</Alert>}
+      <Card className="shadow-sm">
+        <ListGroup variant="flush">
+          {items.map((item) => (
+            <ItemCarrito key={item.productoId} item={item} deshabilitado={ocupado}
+              onCambiarCantidad={(id, cantidad) => ejecutar(() => carrito.cambiarCantidad(id, cantidad))}
+              onEliminar={(id) => ejecutar(() => carrito.eliminarProducto(id))} />
           ))}
-        </ul>
-
-        <div className="d-flex justify-content-between align-items-center pt-3 border-top flex-wrap">
-          <Link to="/" className="btn btn-outline-secondary mb-2 mb-md-0">
-            ← Seguir Comprando
-          </Link>
-          <button
-            type="button"
-            onClick={handleIrACheckout}
-            className="btn btn-success px-4 fw-bold"
-          >
-            Proceder al Pago
-          </button>
-        </div>
-      </div>
-    </div>
+        </ListGroup>
+        <Card.Footer className="bg-white">
+          <div className="d-flex justify-content-between align-items-center py-2">
+            <Button variant="outline-danger" size="sm" disabled={ocupado} onClick={() => ejecutar(carrito.vaciar)}>
+              Vaciar carrito
+            </Button>
+            <span className="fs-4 fw-bold">Total: {formatearPrecio(total)}</span>
+          </div>
+          <div className="d-flex justify-content-between flex-wrap gap-2 pt-2 border-top">
+            <Button as={Link} to="/" variant="outline-secondary">← Seguir comprando</Button>
+            <Button as={Link} to="/checkout" variant="success" className="px-4 fw-bold" disabled={ocupado}>
+              Proceder al pago
+            </Button>
+          </div>
+        </Card.Footer>
+      </Card>
+    </Container>
   );
 }
 

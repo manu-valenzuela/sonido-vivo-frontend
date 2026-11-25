@@ -14,6 +14,8 @@ import Contacto from "../pages/Contacto";
 import Registro from "../pages/Registro";
 import Login from "../pages/Login";
 import NoEncontrada from "../pages/NoEncontrada";
+import MisCompras from "../pages/cliente/MisCompras";
+import MiPerfil from "../pages/cliente/MiPerfil";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProductos from "../pages/admin/AdminProductos";
 import AdminUsuarios from "../pages/admin/AdminUsuarios";
@@ -32,11 +34,19 @@ function RutasApp({ sesion, onIniciarSesion, carrito }) {
       <Route path="/registro" element={<Registro />} />
       <Route path="/login" element={<Login onIniciarSesion={onIniciarSesion} />} />
 
-      {/* Compra: se protegen para CLIENTE en la fase 3 */}
-      <Route path="/carrito" element={<Carrito productosCarrito={carrito.carrito} onEliminar={carrito.eliminarProducto} />} />
-      <Route path="/checkout" element={<Checkout limpiarCarrito={carrito.limpiarCarrito} />} />
-      <Route path="/pago-exitoso" element={<PagoExitoso />} />
-      <Route path="/pago-error" element={<PagoError />} />
+      {/* Cualquier usuario con sesión */}
+      <Route element={<RutaProtegida sesion={sesion} />}>
+        <Route path="/mi-perfil" element={<MiPerfil />} />
+      </Route>
+
+      {/* Cliente */}
+      <Route element={<RutaProtegida sesion={sesion} roles={[ROLES.CLIENTE]} />}>
+        <Route path="/carrito" element={<Carrito carrito={carrito} />} />
+        <Route path="/checkout" element={<Checkout carrito={carrito} />} />
+        <Route path="/pago-exitoso/:ventaId" element={<PagoExitoso />} />
+        <Route path="/pago-error" element={<PagoError />} />
+        <Route path="/mis-compras" element={<MisCompras />} />
+      </Route>
 
       {/* Trabajador (el administrador también puede entrar) */}
       <Route element={<RutaProtegida sesion={sesion} roles={[ROLES.ADMINISTRADOR, ROLES.TRABAJADOR]} />}>

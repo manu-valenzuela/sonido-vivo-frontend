@@ -1,188 +1,133 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  obtenerCheckout,
-  registrarVenta,
-  registrarCompraFrustrada,
-} from "../utils/persistencia";
+import { useState } from "react";
+import { Alert, Button, Card, Col, Container, Form, ProgressBar, Row } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
+import CampoDespacho from "../components/form/CampoDespacho";
+import TablaDetalleProductos from "../components/compras/TablaDetalleProductos";
+import EstadoCarga from "../components/comunes/EstadoCarga";
+import useCargaApi from "../hooks/useCargaApi";
+import useCuentaRegresiva from "../hooks/useCuentaRegresiva";
+import { obtenerPerfil } from "../services/usuarioService";
+import { crearVenta, registrarVentaRechazada } from "../services/ventaService";
+import { validarCheckout } from "../utils/validarCheckout";
+import { METODO_PAGO_SIMULADO } from "../utils/estados";
+import { formatearPrecio } from "../utils/precio";
 
-const estadoInicial = {
-  nombreCompleto: "",
-  correoElectronico: "",
-  direccionDespacho: "",
-  comuna: "",
-};
+const SEGUNDOS_PAGO = 5;
+const inicial = { tipoDespacho: "DOMICILIO", lugarDespacho: "" };
 
-function Checkout({ limpiarCarrito }) {
-  const [datos, setDatos] = useState(estadoInicial);
+function Checkout({ carrito }) {
+  const { items, total } = carrito.carrito;
+  const { datos: perfil, cargando, error } = useCargaApi(obtenerPerfil);
+  const [datos, setDatos] = useState(inicial);
   const [errores, setErrores] = useState({});
   const [procesando, setProcesando] = useState(false);
-  const [segundos, setSegundos] = useState(5);
   const navigate = useNavigate();
 
-  // Recupera el último carrito guardado usando obtenerRegistro
-function construirRegistro(estadoOperacion) {
-    const productos = obtenerCheckout();
-    const total = productos.reduce((acc, item) => acc + (item.price || 0), 0);
+  const solicitud = {
+    tipoDespacho: datos.tipoDespacho,
+    lugarDespacho: datos.tipoDespacho === "DOMICILIO" ? datos.lugarDespacho.trim() || undefined : undefined,
+    metodoPago: METODO_PAGO_SIMULADO,
+  };
 
-    return {
-      id: Date.now(),
-      fecha: new Date().toLocaleString("es-CL"),
-      estado: estadoOperacion,
-      cliente: datos,
-      productos,
-      total,
-    };
+  async function confirmarPago() {
+    try {
+      const venta = await crearVenta(solicitud);
+      await carrito.recargar();
+      navigate(`/pago-exitoso/${venta.id}`, { replace: true });
+    } catch (e) {
+      navigate("/pago-error", { replace: true, state: { mensaje: e.message } });
+    }
   }
 
-  function concretarVenta() {
-    const registroVenta = construirRegistro("completada");
-    registrarVenta(registroVenta);
-    limpiarCarrito(); // Limpia estado de App.jsx y carrito_checkout en un solo paso
-    navigate("/pago-exitoso");
-  }
+  const { segundos } = useCuentaRegresiva(procesando, SEGUNDOS_PAGO, confirmarPago);
 
-  function frustrarCompra() {
+  async function cancelarPago() {
     setProcesando(false);
-    const registroFrustrado = construirRegistro("frustrada");
-    registrarCompraFrustrada(registroFrustrado);
-    navigate("/pago-error");
+    let mensaje = "Cancelaste el pago. La compra quedó registrada como rechazada y tus productos siguen en el carrito.";
+    try {
+      await registrarVentaRechazada(solicitud);
+    } catch (e) {
+      mensaje = `Cancelaste el pago, pero no se pudo registrar la compra rechazada: ${e.message}`;
+    }
+    navigate("/pago-error", { replace: true, state: { mensaje } });
   }
 
-  useEffect(() => {
-    if (!procesando) return;
-
-    if (segundos === 0) {
-      concretarVenta();
-      return;
-    }
-
-    const temporizador = setTimeout(() => {
-      setSegundos((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(temporizador);
-  }, [procesando, segundos]);
-
-  function manejarCambio(evento) {
+  function cambiar(evento) {
     const { name, value } = evento.target;
-    setDatos({
-      ...datos,
-      [name]: value,
-    });
+    setDatos((actual) => ({ ...actual, [name]: value }));
   }
 
-  function manejarEnvio(evento) {
+  function pagar(evento) {
     evento.preventDefault();
-    const nuevosErrores = {};
-
-    if (!datos.nombreCompleto.trim()) {
-      nuevosErrores.nombreCompleto = "El nombre completo es obligatorio";
-    }
-    if (!datos.correoElectronico.trim()) {
-      nuevosErrores.correoElectronico = "El correo electrónico es obligatorio";
-    } else if (!datos.correoElectronico.includes("@")) {
-      nuevosErrores.correoElectronico = "El correo debe incluir un @ válido";
-    }
-    if (!datos.direccionDespacho.trim()) {
-      nuevosErrores.direccionDespacho = "La dirección de despacho es obligatoria";
-    }
-    if (!datos.comuna.trim()) {
-      nuevosErrores.comuna = "La comuna es obligatoria";
-    }
-
+    const nuevosErrores = validarCheckout(datos);
     setErrores(nuevosErrores);
-    if (Object.keys(nuevosErrores).length > 0) return;
+    if (Object.keys(nuevosErrores).length === 0) setProcesando(true);
+  }
 
-    setSegundos(5);
-    setProcesando(true);
+  if (items.length === 0 && !procesando) {
+    return (
+      <Container className="text-center mt-5">
+        <Alert variant="secondary">No hay productos en tu carrito para pagar.</Alert>
+        <Button as={Link} to="/">Ir al catálogo</Button>
+      </Container>
+    );
   }
 
   return (
-    <div className="container mt-4" style={{ maxWidth: "600px" }}>
-      <h2 className="mb-4 text-center text-dark fw-bold">Formulario de Despacho y Pago</h2>
-      <div className="card shadow-sm p-4">
-        {procesando ? (
-          <div className="text-center py-4">
-            <div className="spinner-border text-primary mb-3" role="status" />
-            <h4 className="fw-bold">Procesando tu pago...</h4>
-            <p className="text-muted">
-              La transacción se confirmará automáticamente en{" "}
-              <span className="fw-bold text-dark">{segundos}</span> segundos.
-            </p>
-            <button
-              type="button"
-              onClick={frustrarCompra}
-              className="btn btn-outline-danger fw-bold mt-2 px-4"
-            >
-              Cancelar Compra
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={manejarEnvio} noValidate>
-            <div className="mb-3">
-              <label className="form-label fw-bold">Nombre Completo</label>
-              <input
-                type="text"
-                name="nombreCompleto"
-                className={`form-control ${errores.nombreCompleto ? "is-invalid" : ""}`}
-                value={datos.nombreCompleto}
-                onChange={manejarCambio}
+    <Container>
+      <h2 className="mb-4 text-center fw-bold">Finalizar compra</h2>
+      <Row className="g-4">
+        <Col lg={7}>
+          <Card className="shadow-sm">
+            <Card.Header className="fw-bold">Resumen del pedido</Card.Header>
+            <Card.Body>
+              <TablaDetalleProductos
+                detalles={items}
+                pie={
+                  <tr className="fw-bold fs-5">
+                    <td colSpan={3} className="text-end">Total</td>
+                    <td className="text-end">{formatearPrecio(total)}</td>
+                  </tr>
+                }
               />
-              {errores.nombreCompleto && (
-                <div className="invalid-feedback">{errores.nombreCompleto}</div>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label fw-bold">Correo Electrónico</label>
-              <input
-                type="email"
-                name="correoElectronico"
-                className={`form-control ${errores.correoElectronico ? "is-invalid" : ""}`}
-                value={datos.correoElectronico}
-                onChange={manejarCambio}
-              />
-              {errores.correoElectronico && (
-                <div className="invalid-feedback">{errores.correoElectronico}</div>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label fw-bold">Dirección de Despacho</label>
-              <input
-                type="text"
-                name="direccionDespacho"
-                className={`form-control ${errores.direccionDespacho ? "is-invalid" : ""}`}
-                value={datos.direccionDespacho}
-                onChange={manejarCambio}
-              />
-              {errores.direccionDespacho && (
-                <div className="invalid-feedback">{errores.direccionDespacho}</div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="form-label fw-bold">Comuna</label>
-              <input
-                type="text"
-                name="comuna"
-                className={`form-control ${errores.comuna ? "is-invalid" : ""}`}
-                value={datos.comuna}
-                onChange={manejarCambio}
-              />
-              {errores.comuna && (
-                <div className="invalid-feedback">{errores.comuna}</div>
-              )}
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100 fw-bold py-2">
-              Confirmar y Simular Transacción
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={5}>
+          <Card className="shadow-sm">
+            <Card.Header className="fw-bold">Datos de despacho</Card.Header>
+            <Card.Body>
+              <EstadoCarga cargando={cargando} error={error}>
+                {perfil && (
+                  <>
+                    <p className="mb-1"><strong>{perfil.nombre} {perfil.apellidos}</strong></p>
+                    <p className="mb-1 text-muted">{perfil.email}</p>
+                    <p className="mb-3 text-muted">{perfil.direccion}, {perfil.comunaNombre}, {perfil.regionNombre}</p>
+                    <Form onSubmit={pagar} noValidate>
+                      <fieldset disabled={procesando}>
+                        <CampoDespacho datos={datos} errores={errores} onChange={cambiar}
+                          direccionPerfil={perfil.direccion} />
+                      </fieldset>
+                      {procesando ? (
+                        <div className="text-center">
+                          <p className="fw-bold mb-2">Procesando pago... {segundos} s</p>
+                          <ProgressBar animated now={((SEGUNDOS_PAGO - segundos) / SEGUNDOS_PAGO) * 100} className="mb-3" />
+                          <Button variant="outline-danger" className="w-100" onClick={cancelarPago}>Cancelar pago</Button>
+                        </div>
+                      ) : (
+                        <Button type="submit" variant="success" className="w-100 fw-bold">
+                          Pagar {formatearPrecio(total)}
+                        </Button>
+                      )}
+                    </Form>
+                  </>
+                )}
+              </EstadoCarga>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 }
 

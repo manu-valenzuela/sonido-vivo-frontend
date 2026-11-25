@@ -1,33 +1,45 @@
 import { useEffect, useState } from "react";
-import { guardarCarritoLocalStorage, limpiarCheckout } from "../utils/persistencia";
+import * as carritoService from "../services/carritoService";
+import { ROLES } from "../utils/roles";
 
-// Temporal: en la fase 3 el carrito pasa a usar servicio-ventas (/api/carrito)
-function useCarrito() {
-  const [carrito, setCarrito] = useState(() => {
-    const guardados = localStorage.getItem("carrito_productos");
-    return guardados ? JSON.parse(guardados) : [];
-  });
+const CARRITO_VACIO = { items: [], total: 0, totalItems: 0 };
+
+// Carrito del cliente almacenado en servicio-ventas. Solo lo usa el rol CLIENTE.
+function useCarrito(sesion) {
+  const esCliente = sesion?.rol === ROLES.CLIENTE;
+  const [carrito, setCarrito] = useState(CARRITO_VACIO);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    guardarCarritoLocalStorage(carrito);
-  }, [carrito]);
+    if (!esCliente) return;
+    carritoService.obtenerCarrito().then(setCarrito).catch((e) => setError(e.message));
+  }, [esCliente, sesion?.email]);
 
-  function agregarProducto(producto) {
-    setCarrito((actual) =>
-      actual.some((item) => item.id === producto.id) ? actual : [...actual, producto]
-    );
+  async function ejecutar(operacion) {
+    setError("");
+    const actualizado = await operacion();
+    setCarrito(actualizado);
+    return actualizado;
   }
 
-  function eliminarProducto(id) {
-    setCarrito((actual) => actual.filter((item) => item.id !== id));
+  function agregarProducto(producto, cantidad = 1) {
+    if (!sesion) {
+      const error = new Error("Debes iniciar sesión para agregar productos al carrito");
+      error.estado = 401;
+      return Promise.reject(error);
+    }
+    return ejecutar(() => carritoService.agregarItem(producto.id, cantidad));
   }
 
-  function limpiarCarrito() {
-    setCarrito([]);
-    limpiarCheckout();
-  }
-
-  return { carrito, agregarProducto, eliminarProducto, limpiarCarrito };
+  return {
+    carrito: esCliente ? carrito : CARRITO_VACIO,
+    error,
+    agregarProducto,
+    cambiarCantidad: (productoId, cantidad) => ejecutar(() => carritoService.actualizarCantidad(productoId, cantidad)),
+    eliminarProducto: (productoId) => ejecutar(() => carritoService.eliminarItem(productoId)),
+    vaciar: () => ejecutar(carritoService.vaciarCarrito),
+    recargar: () => ejecutar(carritoService.obtenerCarrito),
+  };
 }
 
 export default useCarrito;

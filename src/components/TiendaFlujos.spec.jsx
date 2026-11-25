@@ -4,7 +4,7 @@ import { vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Productos from "../pages/Productos";
 import DetalleProducto from "../pages/DetalleProducto";
-import { guardarCarritoLocalStorage } from "../utils/persistencia";
+import BtnAgregarAlCarrito from "./buttons/BtnAgregarAlCarrito";
 import { listarProductos, obtenerProducto } from "../services/productoService";
 
 // Se simulan los servicios para no depender de que el backend esté corriendo
@@ -53,14 +53,24 @@ describe("Pruebas Unitarias Avanzadas - Flujos de Tienda", () => {
     expect(listarProductos).toHaveBeenLastCalledWith(expect.objectContaining({ categoriaId: "3" }));
   });
 
-  it("Prueba 9: sincroniza y escribe el formato serializado correcto en localStorage mediante un espía", () => {
-    const espiaItem = vi.spyOn(Storage.prototype, "setItem");
-    const datosSimulados = [{ id: "GE001", nombre: "Guitarra Eléctrica Squier" }];
+  it("Prueba 9: redirige al login si se intenta agregar al carrito sin sesión iniciada", async () => {
+    const usuario = userEvent.setup();
+    const errorSinSesion = Object.assign(new Error("Debes iniciar sesión"), { estado: 401 });
+    const onAgregar = vi.fn().mockRejectedValue(errorSinSesion);
 
-    guardarCarritoLocalStorage(datosSimulados);
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<BtnAgregarAlCarrito producto={guitarra} onAgregar={onAgregar} />} />
+          <Route path="/login" element={<p>Pantalla de login</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    expect(espiaItem).toHaveBeenCalledWith("carrito_productos", JSON.stringify(datosSimulados));
-    espiaItem.mockRestore();
+    await usuario.click(screen.getByRole("button", { name: /agregar al carrito/i }));
+
+    expect(onAgregar).toHaveBeenCalledWith(guitarra);
+    expect(await screen.findByText("Pantalla de login")).toBeInTheDocument();
   });
 
   it("Prueba 10: muestra de forma segura una alerta controlada si el instrumento solicitado no existe", async () => {
