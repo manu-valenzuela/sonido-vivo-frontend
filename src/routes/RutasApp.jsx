@@ -19,7 +19,35 @@ import MiPerfil from "../pages/cliente/MiPerfil";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProductos from "../pages/admin/AdminProductos";
 import AdminUsuarios from "../pages/admin/AdminUsuarios";
-import PanelTrabajador from "../pages/trabajador/PanelTrabajador";
+import EstructuraPanel from "../components/panel/EstructuraPanel";
+import { seccionesGestion } from "./seccionesPanel";
+import ResumenGestion from "../pages/gestion/ResumenGestion";
+import GestionVentas from "../pages/gestion/GestionVentas";
+import GestionBoletas from "../pages/gestion/GestionBoletas";
+import GestionInventario from "../pages/gestion/GestionInventario";
+import GestionMensajes from "../pages/gestion/GestionMensajes";
+import GestionBlog from "../pages/gestion/GestionBlog";
+import FormularioBlog from "../pages/gestion/FormularioBlog";
+import GestionUsuarios from "../pages/gestion/GestionUsuarios";
+
+const BASE_TRABAJADOR = "/trabajador";
+
+// Pantallas de gestión compartidas por el panel de trabajador y (en la fase 5) el de administrador
+function rutasGestion(base) {
+  return (
+    <>
+      <Route index element={<ResumenGestion base={base} />} />
+      <Route path="ventas" element={<GestionVentas />} />
+      <Route path="boletas" element={<GestionBoletas />} />
+      <Route path="inventario" element={<GestionInventario />} />
+      <Route path="mensajes" element={<GestionMensajes />} />
+      <Route path="blog" element={<GestionBlog base={base} />} />
+      <Route path="blog/nuevo" element={<FormularioBlog base={base} />} />
+      <Route path="blog/:id/editar" element={<FormularioBlog base={base} />} />
+      <Route path="usuarios" element={<GestionUsuarios />} />
+    </>
+  );
+}
 
 function RutasApp({ sesion, onIniciarSesion, carrito }) {
   return (
@@ -50,7 +78,10 @@ function RutasApp({ sesion, onIniciarSesion, carrito }) {
 
       {/* Trabajador (el administrador también puede entrar) */}
       <Route element={<RutaProtegida sesion={sesion} roles={[ROLES.ADMINISTRADOR, ROLES.TRABAJADOR]} />}>
-        <Route path="/trabajador" element={<PanelTrabajador />} />
+        <Route path={BASE_TRABAJADOR}
+          element={<EstructuraPanel titulo="Panel trabajador" secciones={seccionesGestion(BASE_TRABAJADOR)} />}>
+          {rutasGestion(BASE_TRABAJADOR)}
+        </Route>
       </Route>
 
       {/* Administrador */}

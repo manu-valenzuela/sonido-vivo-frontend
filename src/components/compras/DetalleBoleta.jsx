@@ -14,7 +14,7 @@ function FilaTotal({ etiqueta, valor, destacada = false }) {
 
 function DetalleBoleta({ boleta }) {
   return (
-    <Card className="shadow-sm text-start">
+    <Card className="shadow-sm">
       <Card.Header className="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span className="fw-bold">Boleta N° {boleta.folio}</span>
         <Badge bg={boleta.estado === "ANULADA" ? "secondary" : "success"}>{boleta.estado}</Badge>
