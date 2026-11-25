@@ -1,60 +1,42 @@
-import React from "react";
+import { Carousel } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import useCargaApi from "../hooks/useCargaApi";
+import { listarProductos } from "../services/productoService";
+import { formatearPrecio } from "../utils/precio";
 
-const CarruselOfertas = ({ productos }) => {
-  // Filtrar solo los productos en oferta
-  const ofertas = productos.filter((producto) => producto.isOffer);
+const MAXIMO_OFERTAS = 8;
+
+function CarruselOfertas() {
+  const { datos } = useCargaApi(() => listarProductos({ enOferta: true }));
+  const ofertas = (datos ?? []).slice(0, MAXIMO_OFERTAS);
 
   if (!ofertas.length) return null;
 
   return (
-    <div
-      id="carouselOfertas"
-      className="carousel slide container my-3 p-0"
-      data-bs-ride="carousel"
-      style={{ maxWidth: "1200px", height: "300px" }}
-    >
-      <h3 className="fw-bold text-center text-danger mb-3">
-        ¡Ofertas Exclusivas!
-      </h3>
-      <div className="carousel-inner h-100 bg-dark text-white rounded">
-        {ofertas.map((prod, index) => (
-          <div
-            key={prod.id}
-            className={`carousel-item h-100 ${index === 0 ? "active" : ""}`}
-            style={{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url(${prod.image})`,
+    <section className="mb-4">
+      <h3 className="fw-bold text-center text-danger mb-3">¡Ofertas exclusivas!</h3>
+      <Carousel className="rounded overflow-hidden bg-dark">
+        {ofertas.map((producto) => (
+          <Carousel.Item key={producto.id}>
+            <div
+              className="d-flex flex-column justify-content-center align-items-center text-center text-white p-4"
+              style={{
+                height: "300px",
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url(${producto.imagen})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
-          >
-            <div className="d-flex flex-column justify-content-center align-items-center h-100 p-4 text-center">
-              <h3 className="h4 mb-2">{prod.name}</h3>
-              <p className="small text-secondary mb-3">{prod.description}</p>
-              <span className="fs-3 fw-bold text-warning">
-                ${prod.price.toLocaleString('es-CL')}
-              </span>
+            >
+              <h4 className="mb-2">{producto.nombre}</h4>
+              <p className="small mb-3">{producto.descripcion}</p>
+              <span className="fs-3 fw-bold text-warning mb-3">{formatearPrecio(producto.precio)}</span>
+              <Link to={`/productos/${producto.id}`} className="btn btn-outline-light btn-sm">Ver detalle</Link>
             </div>
-          </div>
+          </Carousel.Item>
         ))}
-      </div>
-      <button
-        className="carousel-control-prev"
-        type="button"
-        data-bs-target="#carouselOfertas"
-        data-bs-slide="prev"
-      >
-        <span className="carousel-control-prev-icon"></span>
-      </button>
-      <button
-        className="carousel-control-next"
-        type="button"
-        data-bs-target="#carouselOfertas"
-        data-bs-slide="next"
-      >
-        <span className="carousel-control-next-icon"></span>
-      </button>
-    </div>
+      </Carousel>
+    </section>
   );
-};
+}
 
 export default CarruselOfertas;

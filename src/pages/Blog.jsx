@@ -1,24 +1,26 @@
-import { Container } from 'react-bootstrap';
-import { blogsData } from '../data/blogsData';
-import TarjetaBlog from '../components/TarjetaBlog';
+import { Container } from "react-bootstrap";
+import TarjetaBlog from "../components/TarjetaBlog";
+import EstadoCarga from "../components/comunes/EstadoCarga";
+import useCargaApi from "../hooks/useCargaApi";
+import { listarBlogs } from "../services/blogService";
 
 function Blog() {
+  const { datos, cargando, error } = useCargaApi(listarBlogs);
+  const blogs = datos ?? [];
+
   return (
-    <Container className="py-5">
-      {/* Sección Hero */}
+    <Container>
       <section className="text-center mb-5 bg-light p-4 rounded shadow-sm">
-        <h1 className="mb-4 text-center text-dark fw-bold">NOTICIAS IMPORTANTES</h1>
+        <h1 className="mb-3 fw-bold">Blog Sonido Vivo</h1>
         <p className="lead text-muted mb-0">
-          Entérate de las últimas novedades, tips de mantenimiento y datos curiosos del mundo musical.
+          Novedades, consejos y datos curiosos del mundo musical.
         </p>
       </section>
 
-      {/* Listado de Noticias */}
-      <section>
-        {blogsData.map((blog) => (
-          <TarjetaBlog key={blog.id} blog={blog} />
-        ))}
-      </section>
+      <EstadoCarga cargando={cargando} error={error} vacio={blogs.length === 0}
+        mensajeVacio="Aún no hay artículos publicados.">
+        {blogs.map((blog) => <TarjetaBlog key={blog.id} blog={blog} />)}
+      </EstadoCarga>
     </Container>
   );
 }

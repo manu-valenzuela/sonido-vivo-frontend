@@ -1,5 +1,6 @@
-import { Card, Row, Col, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Button, Card, Col, Row } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { formatearFecha } from "../utils/fecha";
 
 function TarjetaBlog({ blog }) {
   return (
@@ -7,29 +8,16 @@ function TarjetaBlog({ blog }) {
       <Row className="g-0 align-items-center">
         <Col md={8} className="order-2 order-md-1">
           <Card.Body className="p-4">
-            <Card.Title as="h2" className="h4 fw-bold mb-3">
-              {blog.titulo}
-            </Card.Title>
-            <Card.Text className="text-secondary mb-4">
-              {blog.resumen}
-            </Card.Text>
-            <Button 
-              as={Link} 
-              to={`/blog/${blog.id}`} 
-              variant="dark" 
-              className="fw-bold"
-            >
-              VER CASO
+            <Card.Subtitle className="text-muted small mb-2">{formatearFecha(blog.fecha)}</Card.Subtitle>
+            <Card.Title as="h2" className="h4 fw-bold mb-3">{blog.titulo}</Card.Title>
+            <Card.Text className="text-secondary mb-4">{blog.resumen}</Card.Text>
+            <Button as={Link} to={`/blog/${blog.id}`} variant="dark" className="fw-bold">
+              LEER ARTÍCULO
             </Button>
           </Card.Body>
         </Col>
         <Col md={4} className="order-1 order-md-2">
-          <Card.Img 
-            src={blog.imagen} 
-            alt={blog.titulo} 
-            style={{ height: '220px', objectFit: 'cover' }} 
-            className="rounded-end"
-          />
+          <Card.Img src={blog.imagen} alt={blog.titulo} style={{ height: "220px", objectFit: "cover" }} />
         </Col>
       </Row>
     </Card>

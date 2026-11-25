@@ -1,27 +1,18 @@
-const API_URL = `${import.meta.env.VITE_API_URL}/productos`;
+import { solicitar } from "./apiCliente";
 
-function mapearProducto(item) {
-  return {
-    id: item.idProducto,
-    name: item.nombre,
-    price: item.precio,
-    image: item.imagenUrl,
-    category: item.categoria ? item.categoria.nombre : "Sin categoría",
-    description: item.descripcion || "" 
-  };
+const PRODUCTOS_URL = import.meta.env.VITE_PRODUCTOS_API_URL;
+
+export function listarProductos(filtros = {}) {
+  const parametros = new URLSearchParams();
+  Object.entries(filtros).forEach(([clave, valor]) => {
+    if (valor !== undefined && valor !== null && valor !== "" && valor !== false) {
+      parametros.append(clave, valor);
+    }
+  });
+  const consulta = parametros.toString();
+  return solicitar(PRODUCTOS_URL, `/productos${consulta ? `?${consulta}` : ""}`);
 }
 
-async function procesarRespuesta(response) {
-  if (!response.ok) {
-    throw new Error(`La API respondió ${response.status}`);
-  }
-  if (response.status === 204) return null;
-  
-  const data = await response.json();
-  return Array.isArray(data) ? data.map(mapearProducto) : mapearProducto(data);
-}
-
-export async function listarProductos() {
-  const response = await fetch(API_URL);
-  return procesarRespuesta(response);
+export function obtenerProducto(id) {
+  return solicitar(PRODUCTOS_URL, `/productos/${id}`);
 }
