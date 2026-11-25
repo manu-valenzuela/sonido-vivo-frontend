@@ -16,3 +16,7 @@ export function listarProductos(filtros = {}) {
 export function obtenerProducto(id) {
   return solicitar(PRODUCTOS_URL, `/productos/${id}`);
 }
+
+export function actualizarInventario(id, stock) {
+  return solicitar(PRODUCTOS_URL, `/productos/${id}/inventario`, { method: "PATCH", body: { stock } });
+}

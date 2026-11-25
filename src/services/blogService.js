@@ -9,3 +9,11 @@ export function listarBlogs() {
 export function obtenerBlog(id) {
   return solicitar(BLOG_URL, `/blog/${id}`);
 }
+
+export function crearBlog(datos) {
+  return solicitar(BLOG_URL, "/blog", { method: "POST", body: datos });
+}
+
+export function actualizarBlog(id, datos) {
+  return solicitar(BLOG_URL, `/blog/${id}`, { method: "PUT", body: datos });
+}

@@ -17,3 +17,11 @@ export function listarMisCompras() {
 export function obtenerVenta(id) {
   return solicitar(VENTAS_URL, `/ventas/${id}`);
 }
+
+export function listarVentas(estado) {
+  return solicitar(VENTAS_URL, `/ventas${estado ? `?estado=${estado}` : ""}`);
+}
+
+export function cambiarEstadoVenta(id, estado) {
+  return solicitar(VENTAS_URL, `/ventas/${id}/estado`, { method: "PATCH", body: { estado } });
+}

@@ -9,3 +9,7 @@ export function registrarCliente(datos) {
 export function obtenerPerfil() {
   return solicitar(USUARIOS_URL, "/usuarios/perfil");
 }
+
+export function listarUsuarios() {
+  return solicitar(USUARIOS_URL, "/usuarios");
+}
