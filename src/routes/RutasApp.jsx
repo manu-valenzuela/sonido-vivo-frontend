@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import RutaProtegida from "./RutaProtegida";
 import { ROLES } from "../utils/roles";
-import { initialProducts } from "../data/productosData";
 import Productos from "../pages/Productos";
 import DetalleProducto from "../pages/DetalleProducto";
 import Carrito from "../pages/Carrito";
@@ -24,7 +23,7 @@ function RutasApp({ sesion, onIniciarSesion, carrito }) {
   return (
     <Routes>
       {/* Públicas */}
-      <Route path="/" element={<Productos productos={initialProducts} onAgregar={carrito.agregarProducto} />} />
+      <Route path="/" element={<Productos onAgregar={carrito.agregarProducto} />} />
       <Route path="/productos/:id" element={<DetalleProducto onAgregar={carrito.agregarProducto} />} />
       <Route path="/nosotros" element={<Nosotros />} />
       <Route path="/blog" element={<Blog />} />

@@ -1,54 +1,68 @@
-import { useState } from "react"; 
-import { Button, Form } from "react-bootstrap"; 
+import { useState } from "react";
+import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import CampoNombreYApellido from "../components/form/CampoNombreYApellido";
 import CampoEmail from "../components/form/CampoEmail";
-import CampoComentario from "../components/form/CampoComentario";
-import { guardarFormulario } from "../utils/persistencia";
+import CampoMensaje from "../components/form/CampoMensaje";
 import { validarContacto } from "../utils/validarContacto";
+import { enviarMensaje } from "../services/contactoService";
 
-const inicial = { nombre: "", 
-                  apellido: "",  
-                  email: "", 
-                  comentario: "" 
-};
+const inicial = { nombre: "", apellidos: "", email: "", mensaje: "" };
 
-function Contacto() { 
+function Contacto() {
+  const [datos, setDatos] = useState(inicial);
+  const [errores, setErrores] = useState({});
+  const [errorApi, setErrorApi] = useState("");
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
-  const [datos, setDatos] = useState(inicial); 
-  const [errores, setErrores] = useState({}); 
- 
-  function cambiar(evento) { 
-    const { name, value } = evento.target; 
-    setDatos({ ...datos, [name]: value }); 
-  } 
- 
-  function enviar(evento) { 
+  function cambiar(evento) {
+    const { name, value } = evento.target;
+    setDatos((actual) => ({ ...actual, [name]: value }));
+  }
+
+  async function enviar(evento) {
     evento.preventDefault();
-    
-    //Validaciones
-    const nuevosErrores = validarContacto(datos); 
-    setErrores(nuevosErrores); 
-    if (Object.keys(nuevosErrores).length > 0) return; 
-    
-    //Guardado de datos usando función de persistencia en LS:
-    guardarFormulario("contacto", datos);
+    const nuevosErrores = validarContacto(datos);
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) return;
 
-    setDatos(inicial); 
-  } 
- 
- return (
-    <div className="container mt-4">
-      <h2 className="mb-4 text-center text-dark fw-bold">Formulario de Contacto</h2>
-      <Form onSubmit={enviar} noValidate>
-        <CampoNombreYApellido datos={datos} errores={errores} onChange={cambiar} />
-        <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
-        <CampoComentario datos={datos} errores={errores} onChange={cambiar} />
+    setEnviando(true);
+    setErrorApi("");
+    setEnviado(false);
+    try {
+      await enviarMensaje({ ...datos, email: datos.email.trim() });
+      setEnviado(true);
+      setDatos(inicial);
+    } catch (e) {
+      setErrorApi(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  }
 
-        <Button type="submit">Enviar Formulario</Button> 
-
-    </Form>
-    </div> 
-  ); 
-} 
+  return (
+    <Container>
+      <Row className="justify-content-center">
+        <Col md={8} lg={6}>
+          <Card className="shadow-sm">
+            <Card.Body className="p-4">
+              <h2 className="mb-4 text-center fw-bold">Formulario de contacto</h2>
+              {enviado && <Alert variant="success">Mensaje enviado. Te responderemos a la brevedad.</Alert>}
+              {errorApi && <Alert variant="danger">{errorApi}</Alert>}
+              <Form onSubmit={enviar} noValidate>
+                <CampoNombreYApellido datos={datos} errores={errores} onChange={cambiar} />
+                <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
+                <CampoMensaje datos={datos} errores={errores} onChange={cambiar} />
+                <Button type="submit" className="w-100" disabled={enviando}>
+                  {enviando ? "Enviando..." : "Enviar mensaje"}
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}
 
 export default Contacto;

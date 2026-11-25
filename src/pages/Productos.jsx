@@ -1,69 +1,55 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Col, Container, Row } from "react-bootstrap";
 import TarjetaProducto from "../components/TarjetaProducto";
 import CarruselOfertas from "../components/CarruselOfertas";
+import FiltrosCatalogo from "../components/FiltrosCatalogo";
+import EstadoCarga from "../components/comunes/EstadoCarga";
+import Paginacion from "../components/comunes/Paginacion";
+import useCargaApi from "../hooks/useCargaApi";
 import { listarProductos } from "../services/productoService";
 
+const PRODUCTOS_POR_PAGINA = 12;
+const filtrosIniciales = { busqueda: "", categoriaId: "", marcaId: "", enOferta: false };
 
-function Productos({ onAgregar }) { 
-  const [categoria, setCategoria] = useState("Todas");
+function Productos({ onAgregar }) {
+  const [filtros, setFiltros] = useState(filtrosIniciales);
+  const [pagina, setPagina] = useState(1);
+  const { datos, cargando, error } = useCargaApi(() => listarProductos(filtros), [filtros]);
 
-  const [productos, setProductos] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const productos = datos ?? [];
+  const totalPaginas = Math.ceil(productos.length / PRODUCTOS_POR_PAGINA);
+  const inicio = (pagina - 1) * PRODUCTOS_POR_PAGINA;
+  const visibles = productos.slice(inicio, inicio + PRODUCTOS_POR_PAGINA);
 
-  useEffect(() => {
-    async function cargarDatos() {
-      try {
-        const datos = await listarProductos();
-        setProductos(datos || []); 
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
-      }
-    }
-    cargarDatos();
-  }, []);  
-  const visibles = categoria === "Todas"
-    ? productos
-    : productos.filter((producto) => producto.category === categoria);
+  function cambiarFiltros(nuevosFiltros) {
+    setFiltros(nuevosFiltros);
+    setPagina(1);
+  }
 
-  if (cargando) return <div className="text-center mt-5"><h4>Cargando catálogo...</h4></div>;
-  if (error) return <div className="text-center mt-5 text-danger"><h4>Error: {error}</h4></div>;
+  function cambiarPagina(nuevaPagina) {
+    setPagina(nuevaPagina);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4 text-center text-dark fw-bold">Nuestro Catálogo de Instrumentos 🎸</h2>
-      
-      {/* Carrusel con los datos reales */}
-      <CarruselOfertas productos={productos} />
+    <Container>
+      <h2 className="mb-4 text-center fw-bold">Nuestro catálogo de instrumentos 🎸</h2>
+      <CarruselOfertas />
+      <FiltrosCatalogo filtros={filtros} onCambiar={cambiarFiltros} />
 
-      <select 
-        className="form-select mb-4" 
-        value={categoria} 
-        onChange={(evento) => setCategoria(evento.target.value)} 
-      > 
-        <option value="Todas">Todas</option> 
-        <option value="Guitarras Acústicas">Guitarras Acústicas</option>
-        <option value="Guitarras Eléctricas">Guitarras Eléctricas</option>
-        <option value="Bajos Eléctricos">Bajos Eléctricos</option>
-        <option value="Baterías">Baterías</option>
-        <option value="Teclados y Pianos">Teclados y Pianos</option>
-        <option value="Amplificadores">Amplificadores</option>
-        <option value="Micrófonos">Micrófonos</option>
-        <option value="Pedales de Efectos">Pedales de Efectos</option>
-        <option value="Accesorios">Accesorios</option>
-        <option value="Estudio y Grabación">Estudio y Grabación</option>
-      </select>
-
-      <div className="row g-4">
-        {visibles.map((producto) => (
-          <div className="col-12 col-md-6 col-lg-4" key={producto.id}>
-            <TarjetaProducto producto={producto} onAgregar={onAgregar} />
-          </div>
-        ))}
-      </div>
-    </div>
+      <EstadoCarga cargando={cargando} error={error} vacio={productos.length === 0}
+        mensajeVacio="No hay productos que coincidan con los filtros.">
+        <p className="text-muted small">{productos.length} productos encontrados</p>
+        <Row className="g-4">
+          {visibles.map((producto) => (
+            <Col xs={12} md={6} lg={4} key={producto.id}>
+              <TarjetaProducto producto={producto} onAgregar={onAgregar} />
+            </Col>
+          ))}
+        </Row>
+        <Paginacion paginaActual={pagina} totalPaginas={totalPaginas} onCambiar={cambiarPagina} />
+      </EstadoCarga>
+    </Container>
   );
 }
 
