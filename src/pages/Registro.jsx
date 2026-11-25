@@ -1,110 +1,93 @@
-import { useState } from "react"; 
-import { useNavigate } from "react-router-dom";
-import { Button, Form, Alert } from "react-bootstrap"; 
+import { useState } from "react";
+import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import CampoNombreYApellido from "../components/form/CampoNombreYApellido";
+import CampoRun from "../components/form/CampoRun";
 import CampoRegionYComuna from "../components/form/CampoRegionYComuna";
-import CampoRut from "../components/form/CampoRut";
 import CampoDireccion from "../components/form/CampoDireccion";
-import CampoContrasenna from "../components/form/CampoContrasenna";
 import CampoEmail from "../components/form/CampoEmail";
-import CampoCategoria from "../components/form/CampoCategoria";
+import CampoContrasena from "../components/form/CampoContrasena";
 import { validarRegistro } from "../utils/validarRegistro";
+import { registrarCliente } from "../services/usuarioService";
 
-// Importamos el servicio del backend en lugar de guardar en localStorage
-import { registerUser } from "../services/authService";
-
-const inicial = { 
-  nombre: "", 
-  apellido: "", 
-  rut: "", 
-  region: "", 
-  comuna: "", 
-  direccion: "", 
-  email: "", 
-  contrasenna: "",
-  categoria: "Usuario" // Se inicializa con valor por defecto; Admin puede asignar otro.
+const inicial = {
+  nombre: "",
+  apellidos: "",
+  run: "",
+  regionId: "",
+  comunaId: "",
+  direccion: "",
+  email: "",
+  contrasena: "",
 };
 
-function Registro({ onGuardar, onCancelar, esAdmin = false }) { 
-  const [datos, setDatos] = useState(inicial); 
-  const [errores, setErrores] = useState({}); 
-  const [errorGlobal, setErrorGlobal] = useState(null);
-  
-  const navigate = useNavigate();
+function Registro() {
+  const [datos, setDatos] = useState(inicial);
+  const [errores, setErrores] = useState({});
+  const [errorApi, setErrorApi] = useState("");
+  const [registrado, setRegistrado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
-  function cambiar(evento) { 
-    const { name, value } = evento.target; 
-    setDatos(prev => ({ ...prev, [name]: value })); 
-    setErrorGlobal(null);
-  } 
+  function cambiar(evento) {
+    const { name, value } = evento.target;
+    setDatos((actual) => ({ ...actual, [name]: value }));
+  }
 
-  async function enviar(evento) { 
-    evento.preventDefault(); 
-
-    // Validación
-    const nuevosErrores = validarRegistro(datos, esAdmin);
+  async function enviar(evento) {
+    evento.preventDefault();
+    const nuevosErrores = validarRegistro(datos);
     setErrores(nuevosErrores);
-    if (Object.keys(nuevosErrores).length > 0) return; 
+    if (Object.keys(nuevosErrores).length > 0) return;
 
-    //  Preparamos los datos (adaptamos contrasenna a password para el backend)
-    const usuarioAGuardar = {
-      ...datos,
-      password: datos.contrasenna
-    };
-    delete usuarioAGuardar.contrasenna; // Limpiamos el campo viejo
-
-    //  Flujo para el panel de Administrador
-    if (onGuardar) {
-      onGuardar(usuarioAGuardar);
-      setDatos(inicial);
-      return;
-    }
-
-    // Flujo para registro normal de un cliente
+    setEnviando(true);
+    setErrorApi("");
     try {
-      await registerUser(usuarioAGuardar);
-      
+      await registrarCliente({
+        ...datos,
+        run: datos.run.trim().toUpperCase(),
+        email: datos.email.trim(),
+        regionId: Number(datos.regionId),
+        comunaId: Number(datos.comunaId),
+      });
+      setRegistrado(true);
       setDatos(inicial);
-      alert("Registro exitoso. Ahora puedes iniciar sesión.");
-      navigate("/login"); 
-
-    } catch (error) {
-      setErrorGlobal("Error al registrar: El correo o RUT ya podrían estar en uso.");
+    } catch (e) {
+      setErrorApi(e.message);
+    } finally {
+      setEnviando(false);
     }
   }
 
   return (
-    // Agregamos un maxWidth para que en la vista normal no ocupe toda la pantalla
-    <div className="container mt-2 mb-5" style={{ maxWidth: esAdmin ? "100%" : "600px" }}>
-      {!onGuardar && <h2 className="mb-4 text-center text-dark fw-bold">Registro de Usuario</h2>}
-      
-      {errorGlobal && <Alert variant="danger">{errorGlobal}</Alert>}
-
-      <Form onSubmit={enviar} noValidate>
-        <CampoNombreYApellido datos={datos} errores={errores} onChange={cambiar} />
-        <CampoRut datos={datos} errores={errores} onChange={cambiar} />
-        <CampoRegionYComuna datos={datos} errores={errores} onChange={cambiar} />
-        <CampoDireccion datos={datos} errores={errores} onChange={cambiar} />
-        <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
-        <CampoContrasenna datos={datos} errores={errores} onChange={cambiar} />
-        {esAdmin && (
-          <CampoCategoria datos={datos} errores={errores} onChange={cambiar} />
-        )}
-
-        <div className="d-flex justify-content-end gap-2 mt-4">
-          {onCancelar && (
-            <Button variant="secondary" type="button" onClick={onCancelar}>
-              Cancelar
-            </Button>
-          )}
-
-          <Button variant="primary" type="submit">
-            Registrar
-          </Button>
-        </div>
-      </Form>
-    </div> 
-  ); 
-} 
+    <Container>
+      <Row className="justify-content-center">
+        <Col md={8} lg={6}>
+          <Card className="shadow-sm">
+            <Card.Body className="p-4">
+              <h2 className="mb-4 text-center fw-bold">Registro de usuario</h2>
+              {registrado && (
+                <Alert variant="success">
+                  Cuenta creada correctamente. Ya puedes <Link to="/login">iniciar sesión</Link>.
+                </Alert>
+              )}
+              {errorApi && <Alert variant="danger">{errorApi}</Alert>}
+              <Form onSubmit={enviar} noValidate>
+                <CampoNombreYApellido datos={datos} errores={errores} onChange={cambiar} />
+                <CampoRun datos={datos} errores={errores} onChange={cambiar} />
+                <CampoRegionYComuna datos={datos} errores={errores} onChange={cambiar} />
+                <CampoDireccion datos={datos} errores={errores} onChange={cambiar} />
+                <CampoEmail datos={datos} errores={errores} onChange={cambiar} />
+                <CampoContrasena datos={datos} errores={errores} onChange={cambiar} />
+                <Button type="submit" className="w-100" disabled={enviando}>
+                  {enviando ? "Registrando..." : "Registrarme"}
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}
 
 export default Registro;

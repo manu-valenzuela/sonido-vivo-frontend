@@ -1,6 +1,6 @@
 export function validacionFormatoRut(valor) {
 
-    const formatoRut = /^[0-9]{7,8}[0-9Kk]$/; 
+    const formatoRut = /^[0-9]{6,8}[0-9Kk]$/; 
     
     const rut = valor.trim();
 
