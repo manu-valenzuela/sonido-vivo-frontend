@@ -1,12 +1,13 @@
-import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
+import { Badge, Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { ROLES } from "../utils/roles";
 
-function Navegacion({ sesion, onCerrarSesion }) {
+function Navegacion({ sesion, totalItemsCarrito = 0, onCerrarSesion }) {
   const navigate = useNavigate();
   const esAdmin = sesion?.rol === ROLES.ADMINISTRADOR;
   const esTrabajador = sesion?.rol === ROLES.TRABAJADOR;
-  const puedeComprar = !sesion || sesion.rol === ROLES.CLIENTE;
+  const esCliente = sesion?.rol === ROLES.CLIENTE;
+  const puedeComprar = !sesion || esCliente;
 
   function salir() {
     onCerrarSesion();
@@ -24,13 +25,20 @@ function Navegacion({ sesion, onCerrarSesion }) {
             <Nav.Link as={NavLink} to="/nosotros">Nosotros</Nav.Link>
             <Nav.Link as={NavLink} to="/blog">Blog</Nav.Link>
             <Nav.Link as={NavLink} to="/contacto">Contacto</Nav.Link>
-            {puedeComprar && <Nav.Link as={NavLink} to="/carrito">🛒 Carrito</Nav.Link>}
+            {puedeComprar && (
+              <Nav.Link as={NavLink} to="/carrito">
+                🛒 Carrito {totalItemsCarrito > 0 && <Badge bg="primary" pill>{totalItemsCarrito}</Badge>}
+              </Nav.Link>
+            )}
             {esAdmin && <Nav.Link as={NavLink} to="/admin">⚙️ Panel administrador</Nav.Link>}
             {esTrabajador && <Nav.Link as={NavLink} to="/trabajador">🧰 Panel trabajador</Nav.Link>}
 
             {sesion ? (
               <NavDropdown title={sesion.email} id="menu-usuario" align="end">
                 <NavDropdown.ItemText className="small text-secondary">{sesion.rol}</NavDropdown.ItemText>
+                <NavDropdown.Divider />
+                {esCliente && <NavDropdown.Item as={Link} to="/mis-compras">Mis compras</NavDropdown.Item>}
+                <NavDropdown.Item as={Link} to="/mi-perfil">Mi perfil</NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={salir}>Cerrar sesión</NavDropdown.Item>
               </NavDropdown>

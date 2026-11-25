@@ -1,25 +1,23 @@
-import { Link } from "react-router-dom";
+import { Button, Card, Container } from "react-bootstrap";
+import { Link, useLocation } from "react-router-dom";
 import BtnProductos from "../components/buttons/BtnProductos";
 
 function PagoError() {
+  const { state } = useLocation();
+  const mensaje = state?.mensaje ?? "No pudimos procesar tu pago. Inténtalo nuevamente.";
+
   return (
-    <div className="container mt-5 text-center" style={{ maxWidth: "500px" }}>
-      <div className="card shadow-sm p-5 border-0 bg-light">
-        <div className="mb-4">
-          <span className="fs-1">❌</span>
-        </div>
-        <h2 className="fw-bold text-danger mb-3">Transacción Rechazada</h2>
-        <p className="text-muted mb-4">
-          No pudimos procesar tu pago. Por favor, verifica los fondos de tu tarjeta, los datos de facturación o intenta con otro medio de pago.
-        </p>
+    <Container className="text-center" style={{ maxWidth: "540px" }}>
+      <Card className="shadow-sm p-5 border-0 bg-light">
+        <span className="fs-1 mb-3">❌</span>
+        <h2 className="fw-bold text-danger mb-3">Transacción no completada</h2>
+        <p className="text-muted mb-4">{mensaje}</p>
         <div className="d-flex gap-2">
-          <Link to="/checkout" className="btn btn-outline-danger w-100 fw-bold">
-            Reintentar Pago
-          </Link>
-          <BtnProductos className="w-100"/>
+          <Button as={Link} to="/carrito" variant="outline-danger" className="w-100 fw-bold">Volver al carrito</Button>
+          <BtnProductos className="w-100" />
         </div>
-      </div>
-    </div>
+      </Card>
+    </Container>
   );
 }
 
