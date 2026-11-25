@@ -16,11 +16,8 @@ import Login from "../pages/Login";
 import NoEncontrada from "../pages/NoEncontrada";
 import MisCompras from "../pages/cliente/MisCompras";
 import MiPerfil from "../pages/cliente/MiPerfil";
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import AdminProductos from "../pages/admin/AdminProductos";
-import AdminUsuarios from "../pages/admin/AdminUsuarios";
 import EstructuraPanel from "../components/panel/EstructuraPanel";
-import { seccionesGestion } from "./seccionesPanel";
+import { seccionesGestion, seccionesAdministrador } from "./seccionesPanel";
 import ResumenGestion from "../pages/gestion/ResumenGestion";
 import GestionVentas from "../pages/gestion/GestionVentas";
 import GestionBoletas from "../pages/gestion/GestionBoletas";
@@ -29,22 +26,29 @@ import GestionMensajes from "../pages/gestion/GestionMensajes";
 import GestionBlog from "../pages/gestion/GestionBlog";
 import FormularioBlog from "../pages/gestion/FormularioBlog";
 import GestionUsuarios from "../pages/gestion/GestionUsuarios";
+import FormularioUsuario from "../pages/gestion/FormularioUsuario";
+import GestionProductos from "../pages/gestion/GestionProductos";
+import FormularioProducto from "../pages/gestion/FormularioProducto";
+import GestionCategoriasMarcas from "../pages/gestion/GestionCategoriasMarcas";
+import GestionReportes from "../pages/gestion/GestionReportes";
+import DetalleReporte from "../pages/gestion/DetalleReporte";
 
 const BASE_TRABAJADOR = "/trabajador";
+const BASE_ADMIN = "/admin";
 
-// Pantallas de gestión compartidas por el panel de trabajador y (en la fase 5) el de administrador
-function rutasGestion(base) {
+// Pantallas de gestión compartidas por ambos paneles. Con esAdmin se muestran las acciones exclusivas del administrador.
+function rutasGestion(base, sesion, esAdmin = false) {
   return (
     <>
       <Route index element={<ResumenGestion base={base} />} />
-      <Route path="ventas" element={<GestionVentas />} />
+      <Route path="ventas" element={<GestionVentas esAdmin={esAdmin} />} />
       <Route path="boletas" element={<GestionBoletas />} />
       <Route path="inventario" element={<GestionInventario />} />
-      <Route path="mensajes" element={<GestionMensajes />} />
-      <Route path="blog" element={<GestionBlog base={base} />} />
+      <Route path="mensajes" element={<GestionMensajes esAdmin={esAdmin} />} />
+      <Route path="blog" element={<GestionBlog base={base} esAdmin={esAdmin} />} />
       <Route path="blog/nuevo" element={<FormularioBlog base={base} />} />
       <Route path="blog/:id/editar" element={<FormularioBlog base={base} />} />
-      <Route path="usuarios" element={<GestionUsuarios />} />
+      <Route path="usuarios" element={<GestionUsuarios base={base} esAdmin={esAdmin} emailSesion={sesion?.email} />} />
     </>
   );
 }
@@ -80,15 +84,24 @@ function RutasApp({ sesion, onIniciarSesion, carrito }) {
       <Route element={<RutaProtegida sesion={sesion} roles={[ROLES.ADMINISTRADOR, ROLES.TRABAJADOR]} />}>
         <Route path={BASE_TRABAJADOR}
           element={<EstructuraPanel titulo="Panel trabajador" secciones={seccionesGestion(BASE_TRABAJADOR)} />}>
-          {rutasGestion(BASE_TRABAJADOR)}
+          {rutasGestion(BASE_TRABAJADOR, sesion)}
         </Route>
       </Route>
 
       {/* Administrador */}
       <Route element={<RutaProtegida sesion={sesion} roles={[ROLES.ADMINISTRADOR]} />}>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/productos" element={<AdminProductos />} />
-        <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+        <Route path={BASE_ADMIN}
+          element={<EstructuraPanel titulo="Panel administrador" secciones={seccionesAdministrador(BASE_ADMIN)} />}>
+          {rutasGestion(BASE_ADMIN, sesion, true)}
+          <Route path="productos" element={<GestionProductos base={BASE_ADMIN} />} />
+          <Route path="productos/nuevo" element={<FormularioProducto base={BASE_ADMIN} />} />
+          <Route path="productos/:id/editar" element={<FormularioProducto base={BASE_ADMIN} />} />
+          <Route path="categorias-marcas" element={<GestionCategoriasMarcas />} />
+          <Route path="usuarios/nuevo" element={<FormularioUsuario base={BASE_ADMIN} />} />
+          <Route path="usuarios/:id/editar" element={<FormularioUsuario base={BASE_ADMIN} />} />
+          <Route path="reportes" element={<GestionReportes base={BASE_ADMIN} />} />
+          <Route path="reportes/:id" element={<DetalleReporte base={BASE_ADMIN} />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NoEncontrada />} />

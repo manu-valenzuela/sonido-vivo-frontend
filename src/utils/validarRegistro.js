@@ -2,8 +2,9 @@ import { textoMinimo, textoMaximo, letras, letrasYSimbolos } from "./validacione
 import { validacionFormatoRut, validacionRut } from "./validacionesRut";
 import { arrobaEmail, dominioEmail } from "./validacionesEmail";
 
-// Reglas alineadas con RegistroClienteRequest de servicio-usuarios
-export function validarRegistro(datos) {
+// Reglas alineadas con RegistroClienteRequest y UsuarioAdminRequest de servicio-usuarios.
+// Con contrasenaOpcional (edición de usuario) la contraseña vacía significa "no cambiarla".
+export function validarRegistro(datos, { contrasenaOpcional = false } = {}) {
   const nuevosErrores = {};
   // Nombre
   if (!textoMinimo(datos.nombre, 0)) nuevosErrores.nombre = "Nombre obligatorio";
@@ -31,8 +32,9 @@ export function validarRegistro(datos) {
   else if (!letrasYSimbolos(datos.direccion)) nuevosErrores.direccion = "La dirección contiene caracteres no permitidos";
   else if (!textoMaximo(datos.direccion, 300)) nuevosErrores.direccion = "La dirección no puede exceder 300 caracteres";
   // Contraseña
-  if (!textoMinimo(datos.contrasena, 0)) nuevosErrores.contrasena = "Contraseña obligatoria";
-  else if (!textoMinimo(datos.contrasena, 5) || !textoMaximo(datos.contrasena, 100)) nuevosErrores.contrasena = "La contraseña debe contener entre 6 y 100 caracteres";
+  if (!textoMinimo(datos.contrasena, 0)) {
+    if (!contrasenaOpcional) nuevosErrores.contrasena = "Contraseña obligatoria";
+  } else if (!textoMinimo(datos.contrasena, 5) || !textoMaximo(datos.contrasena, 100)) nuevosErrores.contrasena = "La contraseña debe contener entre 6 y 100 caracteres";
 
   return nuevosErrores;
 }

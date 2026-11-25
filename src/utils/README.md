@@ -8,9 +8,8 @@ validacionTexto.js      :   Este script contiene funciones para validar todos lo
 
 ## Tests
 
-persistencia.spec.jsx
-    guardarFormulario   :   comprueba que, al guardar datos, se llame a la función de guardarFormulario con un mock.
-    obtenerRegistro     :   comprueba que, al leer datos, se llame a la función obtenerRegistro con un mock.
+validarRegistro.spec.js
+    validarRegistro     :   comprueba cada regla del formulario de registro (nombre, apellidos, RUN, región y comuna, email, dirección y contraseña).
 
 Nuevos tests:
 

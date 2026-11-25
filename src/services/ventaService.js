@@ -25,3 +25,7 @@ export function listarVentas(estado) {
 export function cambiarEstadoVenta(id, estado) {
   return solicitar(VENTAS_URL, `/ventas/${id}/estado`, { method: "PATCH", body: { estado } });
 }
+
+export function anularVenta(id) {
+  return solicitar(VENTAS_URL, `/ventas/${id}/anular`, { method: "PATCH" });
+}

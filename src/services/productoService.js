@@ -20,3 +20,15 @@ export function obtenerProducto(id) {
 export function actualizarInventario(id, stock) {
   return solicitar(PRODUCTOS_URL, `/productos/${id}/inventario`, { method: "PATCH", body: { stock } });
 }
+
+export function crearProducto(datos) {
+  return solicitar(PRODUCTOS_URL, "/productos", { method: "POST", body: datos });
+}
+
+export function actualizarProducto(id, datos) {
+  return solicitar(PRODUCTOS_URL, `/productos/${id}`, { method: "PUT", body: datos });
+}
+
+export function eliminarProducto(id) {
+  return solicitar(PRODUCTOS_URL, `/productos/${id}`, { method: "DELETE" });
+}

@@ -4,15 +4,17 @@ import EstadoCarga from "../../components/comunes/EstadoCarga";
 import EstadoBadge from "../../components/comunes/EstadoBadge";
 import FiltroEstado from "../../components/comunes/FiltroEstado";
 import AlertaResultado from "../../components/comunes/AlertaResultado";
+import ModalConfirmacion from "../../components/comunes/ModalConfirmacion";
 import useCargaApi from "../../hooks/useCargaApi";
 import useAccionApi from "../../hooks/useAccionApi";
-import { listarMensajes, cambiarEstadoMensaje } from "../../services/contactoService";
+import { listarMensajes, cambiarEstadoMensaje, eliminarMensaje } from "../../services/contactoService";
 import { ESTADOS_CONTACTO } from "../../utils/estados";
 import { formatearFecha } from "../../utils/fecha";
 
-function GestionMensajes() {
+function GestionMensajes({ esAdmin = false }) {
   const [estado, setEstado] = useState("");
   const [mensajeVisible, setMensajeVisible] = useState(null);
+  const [porEliminar, setPorEliminar] = useState(null);
   const { datos, cargando, error, recargar } = useCargaApi(() => listarMensajes(estado), [estado]);
   const accion = useAccionApi();
   const mensajes = datos ?? [];
@@ -20,6 +22,12 @@ function GestionMensajes() {
   async function cambiarEstado(mensaje, nuevoEstado) {
     const listo = await accion.ejecutar(() => cambiarEstadoMensaje(mensaje.id, nuevoEstado),
       `El mensaje de ${mensaje.nombre} quedó como "${ESTADOS_CONTACTO[nuevoEstado].texto}".`);
+    if (listo) recargar();
+  }
+
+  async function confirmarEliminacion() {
+    const listo = await accion.ejecutar(() => eliminarMensaje(porEliminar.id), `Mensaje de ${porEliminar.nombre} eliminado.`);
+    setPorEliminar(null);
     if (listo) recargar();
   }
 
@@ -48,12 +56,22 @@ function GestionMensajes() {
                     ))}
                   </Form.Select>
                 </td>
-                <td><Button size="sm" variant="outline-secondary" onClick={() => setMensajeVisible(mensaje)}>Leer</Button></td>
+                <td className="text-nowrap">
+                  <Button size="sm" variant="outline-secondary" onClick={() => setMensajeVisible(mensaje)}>Leer</Button>
+                  {esAdmin && (
+                    <Button size="sm" variant="outline-danger" className="ms-1" onClick={() => setPorEliminar(mensaje)}>Eliminar</Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </Table>
       </EstadoCarga>
+
+      <ModalConfirmacion mostrar={Boolean(porEliminar)} titulo="Eliminar mensaje"
+        mensaje={`¿Eliminar el mensaje de ${porEliminar?.nombre} ${porEliminar?.apellidos}? Esta acción no se puede deshacer.`}
+        textoConfirmar="Eliminar" procesando={accion.procesando}
+        onConfirmar={confirmarEliminacion} onCancelar={() => setPorEliminar(null)} />
 
       <Modal show={Boolean(mensajeVisible)} onHide={() => setMensajeVisible(null)} centered>
         <Modal.Header closeButton>
