@@ -1,5 +1,5 @@
 export function texto(valor) {
-   typeof valor === "string";
+  return typeof valor === "string";
 }
 
 export function textoMinimo(texto, minimo) {
@@ -21,14 +21,14 @@ export function letras(texto) {
 
 export function letrasYNumeros(texto) {
 
-    const letrasYNumeros = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-]+$/;
+    const letrasYNumeros = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s-]+$/;
 
     return typeof texto === "string" && letrasYNumeros.test(texto);
 }
 
 export function letrasYSimbolos(texto) {
 
-    const letrasYSimbolos = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,:=¿\?\-]+$/;
+    const letrasYSimbolos = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,:=¿?-]+$/;
 
     return typeof texto === "string" && letrasYSimbolos.test(texto);
 }
