@@ -1,19 +1,18 @@
-# 🎸 Sonido Vivo - Frontend (React)
+# Sonido Vivo - Frontend (React)
 
-Tienda de instrumentos musicales desarrollada en **React** con **React-Bootstrap**, que consume los microservicios **Spring Boot** del repositorio [sonido-vivo-tienda](https://github.com/RomanMateos/sonido-vivo-tienda). Proyecto de **Desarrollo FullStack II** (Duoc UC, EA3).
+Tienda de instrumentos musicales desarrollada en **React** con **React-Bootstrap**, usa los microservicios **Spring Boot** del repositorio [sonido-vivo-tienda](https://github.com/manu-valenzuela/sonido-vivo-backend). Proyecto de **Desarrollo FullStack II**.
 
 ---
 
-## 📌 Estado del proyecto
+## Estado del proyecto
 1. **Integración con el backend:** completa. Todas las pantallas consumen la API; ya no hay datos locales ni `localStorage`.
 2. **Sesión y roles:** login con JWT emitido por `servicio-autenticacion`; rutas protegidas para `CLIENTE`, `TRABAJADOR` y `ADMINISTRADOR`.
 3. **Compra:** carrito en `servicio-ventas`, checkout con pago simulado (5 segundos, cancelable) y boleta emitida por `servicio-boletas`. Las compras canceladas se guardan como `RECHAZADA`.
 4. **Paneles:** el trabajador gestiona ventas, boletas, inventario, mensajes, blog y consulta usuarios. El administrador además gestiona productos, categorías, marcas, usuarios y reportes.
-5. **Despliegue en AWS:** preparado (`.env.production`), pendiente de ejecutar según la Guía 18. Ver [Despliegue](#-despliegue-en-aws-ec2).
-
+5. **Despliegue en AWS** 
 ---
 
-## 🧩 Microservicios que consume
+## Microservicios
 | Servicio | Puerto local | Variable de entorno | Uso en el front |
 |---|---|---|---|
 | servicio-autenticacion | 8081 | `VITE_AUTH_API_URL` | Login (JWT) |
@@ -25,11 +24,11 @@ Tienda de instrumentos musicales desarrollada en **React** con **React-Bootstrap
 | servicio-contacto | 8087 | `VITE_CONTACTO_API_URL` | Formulario y gestión de mensajes |
 | servicio-reportes | 8088 | `VITE_REPORTES_API_URL` | Reportes del administrador |
 
-Cada servicio tiene su propia variable, como en la Guía 17. Los valores están en `.env.development` (local) y `.env.production` (AWS). No contienen secretos: el navegador puede leerlos.
+Cada servicio tiene su propia variable. Los valores están en `.env.development` (local) y `.env.production` (AWS).
 
 ---
 
-## 🚀 Ejecución local
+## Ejecución local
 Requisitos: **Node 20.19 o superior** y el backend corriendo (base de datos cargada con `db.sql` y `datos.sql`).
 
 ```bash
@@ -51,7 +50,7 @@ Usuario inicial: `admin@duoc.cl` / `Admin1234!` (lo crea el backend al iniciar).
 
 ---
 
-## 📂 Estructura del proyecto
+## Estructura del proyecto
 ```text
 src/
 ├── components/      # Componentes visuales reutilizables (reciben props)
@@ -66,12 +65,12 @@ src/
 ├── routes/          # Rutas, protección por rol y secciones de los paneles
 ├── services/        # Un archivo por recurso del backend; apiCliente agrega el JWT
 ├── utils/           # Validaciones, formatos, roles, estados y sesión
-└── App.jsx          # Solo arma navegación, rutas y pie de página
+└── App.jsx          # Arma navegación, rutas y pie de página
 ```
 
 ---
 
-## 🔐 Roles y rutas
+## Roles y rutas
 | Rol | Rutas |
 |---|---|
 | Público | `/`, `/productos/:id`, `/blog`, `/contacto`, `/nosotros`, `/registro`, `/login` |
@@ -84,7 +83,7 @@ La protección en React mejora la navegación, pero la seguridad real la aplica 
 
 ---
 
-## 🧪 Testing (Vitest)
+## Testing (Vitest)
 9 archivos y 69 pruebas: validaciones de todos los formularios, formatos de fecha y monto, flujo de estados de venta, protección de rutas, navegación por rol, componentes del catálogo y flujos de tienda con servicios simulados (`vi.mock`), por lo que no requieren el backend.
 
 ```bash
@@ -93,8 +92,8 @@ npm run test:run
 
 ---
 
-## ☁️ Despliegue en AWS (EC2)
-Según la Guía 18, en una sola instancia EC2:
+## Despliegue en AWS (EC2)
+En una sola instancia EC2:
 
 1. **Nginx** publica `dist/` en el puerto **80** y reenvía cada prefijo de `.env.production` (por ejemplo `/api/auth-service/`) a `127.0.0.1:<puerto>/api/` del servicio correspondiente.
 2. **Grupo de seguridad:** solo puertos **80** (sitio y API) y **22** (SSH). Los puertos 8081 a 8088 y 3306 no se abren.
