@@ -13,3 +13,7 @@ export function listarMensajes(estado) {
 export function cambiarEstadoMensaje(id, estado) {
   return solicitar(CONTACTO_URL, `/contacto/${id}/estado`, { method: "PATCH", body: { estado } });
 }
+
+export function eliminarMensaje(id) {
+  return solicitar(CONTACTO_URL, `/contacto/${id}`, { method: "DELETE" });
+}

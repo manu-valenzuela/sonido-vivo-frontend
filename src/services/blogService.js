@@ -17,3 +17,7 @@ export function crearBlog(datos) {
 export function actualizarBlog(id, datos) {
   return solicitar(BLOG_URL, `/blog/${id}`, { method: "PUT", body: datos });
 }
+
+export function eliminarBlog(id) {
+  return solicitar(BLOG_URL, `/blog/${id}`, { method: "DELETE" });
+}

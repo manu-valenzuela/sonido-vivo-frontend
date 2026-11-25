@@ -1,4 +1,4 @@
-// Secciones del menú lateral de cada panel. "ruta" es relativa a la raíz del panel.
+// Secciones del menú lateral de cada panel
 export function seccionesGestion(base) {
   return [
     { ruta: base, texto: "Resumen", icono: "📊", exacta: true },
@@ -9,4 +9,15 @@ export function seccionesGestion(base) {
     { ruta: `${base}/blog`, texto: "Blog", icono: "📰" },
     { ruta: `${base}/usuarios`, texto: "Usuarios", icono: "👥" },
   ];
+}
+
+// El administrador ve las mismas secciones más las exclusivas de su rol
+export function seccionesAdministrador(base) {
+  const secciones = seccionesGestion(base);
+  secciones.splice(3, 0,
+    { ruta: `${base}/productos`, texto: "Productos", icono: "🎸" },
+    { ruta: `${base}/categorias-marcas`, texto: "Categorías y marcas", icono: "🏷️" },
+  );
+  secciones.push({ ruta: `${base}/reportes`, texto: "Reportes", icono: "📈" });
+  return secciones;
 }
